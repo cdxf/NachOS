@@ -129,6 +129,13 @@ Yield:
 	syscall
 	j	$31
 	.end Yield
+	.globl Sub
+	.ent	Sub
+Sub:
+	addiu $2,$0,SC_Sub
+	syscall
+	j $31
+	.end Sub
 
 /* dummy function to keep gcc happy */
         .globl  __main

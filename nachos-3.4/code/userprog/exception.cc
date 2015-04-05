@@ -53,23 +53,23 @@
 // Purpose: Copy buffer from User memory space to System memory space
 char* User2System(int virtAddr,int limit)
 {
-    int i;// index
-    int oneChar;
-    char* kernelBuf = NULL;
-    kernelBuf = new char[limit +1];//need for terminal string
-    if (kernelBuf == NULL)
-       return kernelBuf;
-    memset(kernelBuf,0,limit+1);
-    //printf("\n Filename u2s:");
-    for (i = 0 ; i < limit ;i++)
-    {
-        machine->ReadMem(virtAddr+i,1,&oneChar);
-        kernelBuf[i] = (char)oneChar;
-        //printf("%c",kernelBuf[i]);
-        if (oneChar == 0)
-           break;
-    }
-    return kernelBuf;
+        int i; // index
+        int oneChar;
+        char* kernelBuf = NULL;
+        kernelBuf = new char[limit +1]; //need for terminal string
+        if (kernelBuf == NULL)
+                return kernelBuf;
+        memset(kernelBuf,0,limit+1);
+        //printf("\n Filename u2s:");
+        for (i = 0; i < limit; i++)
+        {
+                machine->ReadMem(virtAddr+i,1,&oneChar);
+                kernelBuf[i] = (char)oneChar;
+                //printf("%c",kernelBuf[i]);
+                if (oneChar == 0)
+                        break;
+        }
+        return kernelBuf;
 }
 
 // Input: - User space address (int)
@@ -79,20 +79,19 @@ char* User2System(int virtAddr,int limit)
 // Purpose: Copy buffer from System memory space to User memory space
 int System2User(int virtAddr,int len,char* buffer)
 {
-    if (len < 0) return -1;
-    if (len == 0)return len;
-    int i = 0;
-    int oneChar = 0 ;
-    do{
-          oneChar= (int) buffer[i];
-          machine->WriteMem(virtAddr+i,1,oneChar);
-          i ++;
-   }while(i < len && oneChar != 0);
-  return i;
+        if (len < 0) return -1;
+        if (len == 0) return len;
+        int i = 0;
+        int oneChar = 0;
+        do {
+                oneChar= (int) buffer[i];
+                machine->WriteMem(virtAddr+i,1,oneChar);
+                i++;
+        } while(i < len && oneChar != 0);
+        return i;
 }
-
-
-
+//Operator for Sub()
+int op1, op2, result;
 void
 ExceptionHandler(ExceptionType which)
 {
@@ -110,6 +109,34 @@ ExceptionHandler(ExceptionType which)
         switch (which) {
         case NoException:
                 return;
+        case PageFaultException:
+                DEBUG('a', "\n PageFaultExceptio");
+                printf ("\n\n PageFaultExceptio");
+                break;
+        case ReadOnlyException:
+                DEBUG('a', "\n PageFaultExceptio");
+                printf ("\n\n PageFaultExceptio");
+                break;
+        case BusErrorException:
+                DEBUG('a', "\n BusErrorException");
+                printf ("\n\n BusErrorException");
+                break;
+        case AddressErrorException:
+                DEBUG('a', "\n AddressErrorException");
+                printf ("\n\n AddressErrorException");
+                break;
+        case OverflowException:
+                DEBUG('a', "\n OverflowException");
+                printf ("\n\n OverflowException");
+                break;
+        case IllegalInstrException:
+                DEBUG('a', "\n IllegalInstrException");
+                printf ("\n\n IllegalInstrException");
+                break;
+        case NumExceptionTypes:
+                DEBUG('a', "\n NumExceptionTypes");
+                printf ("\n\n NumExceptionTypes");
+                break;
         case SyscallException:
                 switch (type) {
                 case SC_Halt:
@@ -157,6 +184,49 @@ ExceptionHandler(ExceptionType which)
                         delete filename;
                         break;
                 }
+                case SC_Exit:
+                        DEBUG('a', "\n SC_Exit");
+                        printf ("\n\n SC_Exit");
+                        break;
+                case SC_Exec:
+                        DEBUG('a', "\n SC_Exec");
+                        printf ("\n\n SC_Exec");
+                        break;
+                case SC_Join:
+                        DEBUG('a', "\n SC_Join");
+                        printf ("\n\n SC_Join");
+                        break;
+                case SC_Open:
+                        DEBUG('a', "\n SC_Open");
+                        printf ("\n\n SC_Open");
+                        break;
+                case SC_Read:
+                        DEBUG('a', "\n SC_Read");
+                        printf ("\n\n SC_Read");
+                        break;
+                case SC_Write:
+                        DEBUG('a', "\n SC_Write");
+                        printf ("\n\n SC_Write");
+                        break;
+                case SC_Close:
+                        DEBUG('a', "\n SC_Close");
+                        printf ("\n\n SC_Close");
+                        break;
+                case SC_Fork:
+                        DEBUG('a', "\n SC_Fork");
+                        printf ("\n\n SC_Fork");
+                        break;
+                case SC_Yield:
+                        DEBUG('a', "\n SC_Yield");
+                        printf ("\n\n SC_Yield");
+                        break;
+                case SC_Sub:
+                        op1 = machine->ReadRegister (4);
+                        op2 = machine->ReadRegister (5);
+                        result = op1 - op2;
+                        machine->WriteRegister (2, result);
+                        interrupt->Halt();
+                        break;
                 default:
                         printf("\n Unexpected user mode exception (%d %d)", which,type);
                         interrupt->Halt();

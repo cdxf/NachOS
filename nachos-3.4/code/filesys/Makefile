@@ -395,6 +395,21 @@ translate.o: ../machine/translate.cc /usr/include/stdc-predef.h \
  ../machine/interrupt.h ../threads/list.h ../machine/stats.h \
  ../machine/timer.h ../filesys/synchdisk.h ../machine/disk.h \
  ../threads/synch.h
+synchcons.o: ../threads/synchcons.cc /usr/include/stdc-predef.h \
+ ../threads/synchcons.h ../machine/console.h ../threads/copyright.h \
+ ../threads/utility.h ../threads/copyright.h ../threads/bool.h \
+ ../machine/sysdep.h /usr/include/stdio.h /usr/include/features.h \
+ /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h \
+ /usr/include/gnu/stubs.h /usr/include/gnu/stubs-32.h \
+ /usr/lib/gcc/x86_64-linux-gnu/4.9/include/stddef.h \
+ /usr/include/bits/types.h /usr/include/bits/typesizes.h \
+ /usr/include/libio.h /usr/include/_G_config.h /usr/include/wchar.h \
+ ../threads/stdarg.h /usr/include/bits/stdio_lim.h \
+ /usr/include/bits/sys_errlist.h /usr/include/string.h \
+ /usr/include/xlocale.h ../threads/synch.h ../threads/thread.h \
+ ../threads/utility.h ../machine/machine.h ../machine/translate.h \
+ ../machine/disk.h ../userprog/addrspace.h ../filesys/filesys.h \
+ ../filesys/openfile.h ../threads/list.h
 directory.o: ../filesys/directory.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../threads/utility.h ../threads/copyright.h \
  ../threads/bool.h ../machine/sysdep.h /usr/include/stdio.h \

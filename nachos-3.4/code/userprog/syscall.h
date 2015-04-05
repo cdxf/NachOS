@@ -29,6 +29,7 @@
 #define SC_Close	8
 #define SC_Fork		9
 #define SC_Yield	10
+#define SC_Sub 		43
 
 #ifndef IN_ASM
 
@@ -124,6 +125,7 @@ void Fork(void (*func)());
  */
 void Yield();		
 
+int Sub (int a, int b);
 #endif /* IN_ASM */
 
 #endif /* SYSCALL_H */

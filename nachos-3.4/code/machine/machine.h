@@ -36,18 +36,26 @@
 #define MemorySize 	(NumPhysPages * PageSize)
 #define TLBSize		4		// if there is a TLB, make it small
 
-enum ExceptionType { NoException,           // Everything ok!
-		     SyscallException,      // A program executed a system call.
-		     PageFaultException,    // No valid translation found
-		     ReadOnlyException,     // Write attempted to page marked 
+enum ExceptionType { 
+NoException,           // Everything ok!
+		     
+SyscallException,      // A program executed a system call.
+		     
+PageFaultException,    // No valid translation found
+		     
+ReadOnlyException,     // Write attempted to page marked 
 					    // "read-only"
-		     BusErrorException,     // Translation resulted in an 
+		     
+BusErrorException,     // Translation resulted in an 
 					    // invalid physical address
-		     AddressErrorException, // Unaligned reference or one that
+		     
+AddressErrorException, // Unaligned reference or one that
 					    // was beyond the end of the
 					    // address space
-		     OverflowException,     // Integer overflow in add or sub.
-		     IllegalInstrException, // Unimplemented or reserved instr.
+		     
+OverflowException,     // Integer overflow in add or sub.
+		     
+IllegalInstrException, // Unimplemented or reserved instr.
 		     
 		     NumExceptionTypes
 };
