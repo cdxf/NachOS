@@ -136,7 +136,20 @@ Sub:
 	syscall
 	j $31
 	.end Sub
-
+	.globl ReadInt
+	.ent	ReadInt
+ReadInt:
+    	addiu $2, $0, SC_ReadInt
+    	syscall
+    	j $31
+    	.end ReadInt
+	.globl Print
+	.ent Print
+Print:
+    	addiu $2, $0, SC_Print
+    	syscall
+    	j $31
+    .end Print
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main

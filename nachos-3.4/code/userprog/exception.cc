@@ -47,6 +47,7 @@
 //	"which" is the kind of exception.  The list of possible exceptions
 //	are in machine.h.
 //----------------------------------------------------------------------
+
 // Input: - User space address (int)
 //     - Limit of buffer (int)
 // Output:- Buffer (char*)
@@ -90,9 +91,10 @@ int System2User(int virtAddr,int len,char* buffer)
         } while(i < len && oneChar != 0);
         return i;
 }
-//Operator for Sub()
 int op1, op2, result;
+char* buffer = new char[30];
 void
+//Varible for Readint()
 ExceptionHandler(ExceptionType which)
 {
         int type = machine->ReadRegister(2);
@@ -112,30 +114,37 @@ ExceptionHandler(ExceptionType which)
         case PageFaultException:
                 DEBUG('a', "\n PageFaultExceptio");
                 printf ("\n\n PageFaultExceptio");
+                interrupt->Halt();
                 break;
         case ReadOnlyException:
                 DEBUG('a', "\n PageFaultExceptio");
                 printf ("\n\n PageFaultExceptio");
+                interrupt->Halt();
                 break;
         case BusErrorException:
                 DEBUG('a', "\n BusErrorException");
                 printf ("\n\n BusErrorException");
+                interrupt->Halt();
                 break;
         case AddressErrorException:
                 DEBUG('a', "\n AddressErrorException");
                 printf ("\n\n AddressErrorException");
+                interrupt->Halt();
                 break;
         case OverflowException:
                 DEBUG('a', "\n OverflowException");
                 printf ("\n\n OverflowException");
+                interrupt->Halt();
                 break;
         case IllegalInstrException:
                 DEBUG('a', "\n IllegalInstrException");
                 printf ("\n\n IllegalInstrException");
+                interrupt->Halt();
                 break;
         case NumExceptionTypes:
                 DEBUG('a', "\n NumExceptionTypes");
                 printf ("\n\n NumExceptionTypes");
+                interrupt->Halt();
                 break;
         case SyscallException:
                 switch (type) {
@@ -179,6 +188,7 @@ ExceptionHandler(ExceptionType which)
                                 delete filename;
                                 return;
                         }
+
                         machine->WriteRegister(2,0); // trả về cho chương trình
                         // người dùng thành công
                         delete filename;
@@ -225,11 +235,29 @@ ExceptionHandler(ExceptionType which)
                         op2 = machine->ReadRegister (5);
                         result = op1 - op2;
                         machine->WriteRegister (2, result);
-                        interrupt->Halt();
+                        printf("%d - %d = %d \n",op1,op2,result);
+                        //interrupt->Halt();
                         break;
+                case SC_ReadInt:
+                        gSynchConsole->Read(buffer,30);
+                        result = atoi(buffer);
+                        //scanf("%d",&result);
+                        machine->WriteRegister (2, result);
+                        break;
+                case SC_Print:
+ 			int virtAddr;
+                        // Lấy tham số tên tập tin từ thanh ghi r4
+                        virtAddr = machine->ReadRegister(4);
+                        // MaxFileLength là = 32
+                        buffer = User2System(virtAddr,30);
+                        gSynchConsole->Write(buffer,30);
+                                break;
                 default:
                         printf("\n Unexpected user mode exception (%d %d)", which,type);
                         interrupt->Halt();
                 }
+                machine->registers[PrevPCReg] = machine->registers[PCReg];
+                machine->registers[PCReg] = machine->registers[NextPCReg];
+                machine->registers[NextPCReg] += 4;
         }
 }
