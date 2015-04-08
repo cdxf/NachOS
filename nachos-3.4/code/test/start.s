@@ -145,13 +145,51 @@ ReadInt:
     	j $31
     .end ReadInt
 
-	.globl Print
-	.ent Print
-Print:
-    	addiu $2, $0, SC_Print
+	.globl PrintInt
+	.ent PrintInt
+PrintInt:
+    	addiu $2, $0, SC_PrintInt
     	syscall
     	j $31
-    .end Print
+    .end PrintInt
+
+
+	.globl Print
+	.ent Print
+PrintString:
+    	addiu $2, $0, SC_PrintString
+    	syscall
+    	j $31
+    .end PrintString
+
+	.globl PrintChar
+	.ent PrintChar
+PrintChar:
+    	addiu $2, $0, SC_PrintChar
+    	syscall
+    	j $31
+    .end PrintChar
+
+	.globl ReadChar
+	.ent ReadChar
+ReadChar:
+    	addiu $2, $0, SC_ReadChar
+    	syscall
+    	j $31
+    .end ReadChar
+
+
+	.globl ReadString
+	.ent ReadString
+ReadString:
+    	addiu $2, $0, SC_ReadString
+    	syscall
+    	j $31
+    .end ReadString
+
+
+
+
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main

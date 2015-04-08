@@ -24,7 +24,7 @@
   #include "copyright.h"
   #include "system.h"
   #include "syscall.h"
-  #define MaxFileLength 32
+  #define MaxStringLength 256
 //----------------------------------------------------------------------
 // ExceptionHandler
 //  Entry point into the Nachos kernel.  Called when a user program
@@ -91,8 +91,9 @@ int System2User(int virtAddr,int len,char* buffer)
         } while(i < len && oneChar != 0);
         return i;
 }
-int op1, op2, result;
-char* buffer = new char[30];
+int op1, op2, result, n;
+char* buffer = new char[MaxStringLength];
+int virtAddr, len;
 void
 //Varible for Readint()
 ExceptionHandler(ExceptionType which)
@@ -162,8 +163,7 @@ ExceptionHandler(ExceptionType which)
                         // Lấy tham số tên tập tin từ thanh ghi r4
                         virtAddr = machine->ReadRegister(4);
                         DEBUG ('a',"\n Reading filename.");
-                        // MaxFileLength là = 32
-                        filename = User2System(virtAddr,MaxFileLength+1);
+                        filename = User2System(virtAddr,MaxStringLength+1);
                         if (filename == NULL)
                         {
                                 printf("\n Not enough memory in system");
@@ -239,19 +239,43 @@ ExceptionHandler(ExceptionType which)
                         //interrupt->Halt();
                         break;
                 case SC_ReadInt:
-                        gSynchConsole->Read(buffer,30);
+                        gSynchConsole->Read(buffer,256);
                         result = atoi(buffer);
-                        //scanf("%d",&result);
+                        for(int i = 0; i < strlen(buffer); i++)
+                        {
+                                if(buffer[i]>'9' || buffer[i] < '0') {
+                                        result = 0;
+                                        break;
+                                }
+                        }
                         machine->WriteRegister (2, result);
                         break;
-                case SC_Print:
- 			int virtAddr;
-                        // Lấy tham số tên tập tin từ thanh ghi r4
+                case SC_ReadChar:
+                        gSynchConsole->Read(buffer,MaxStringLength);
+                        machine->WriteRegister (2, buffer[0]);
+                        break;
+                case SC_PrintChar:
+                        buffer[0] = machine->ReadRegister(4);
+                        buffer[1] = '\0';
+                        gSynchConsole->Write(buffer,2);
+                        break;
+                case SC_PrintInt:
+                        op1 = machine->ReadRegister(4);
+                        //Chuyen int sang string
+                        sprintf(buffer,"%d",op1);
+                        gSynchConsole->Write(buffer,strlen(buffer));
+                        break;
+                case SC_PrintString:
                         virtAddr = machine->ReadRegister(4);
-                        // MaxFileLength là = 32
-                        buffer = User2System(virtAddr,30);
-                        gSynchConsole->Write(buffer,30);
-                                break;
+                        buffer = User2System(virtAddr,MaxStringLength);
+                        gSynchConsole->Write(buffer,strlen(buffer));
+                        break;
+                case SC_ReadString:
+                        virtAddr = machine->ReadRegister(4);
+                        len = machine->ReadRegister(5);
+                        gSynchConsole->Read(buffer,MaxStringLength);
+                        System2User(virtAddr,len,buffer);
+                        break;
                 default:
                         printf("\n Unexpected user mode exception (%d %d)", which,type);
                         interrupt->Halt();
