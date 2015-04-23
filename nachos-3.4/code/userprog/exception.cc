@@ -243,6 +243,7 @@ ExceptionHandler(ExceptionType which)
                         result = atoi(buffer);
                         for(int i = 0; i < strlen(buffer); i++)
                         {
+				if(i == 0 && buffer[i] == '-') continue;
                                 if(buffer[i]>'9' || buffer[i] < '0') {
                                         result = 0;
                                         break;

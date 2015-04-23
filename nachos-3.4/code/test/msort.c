@@ -10,7 +10,7 @@ int a[100];
 PrintString("Nhap n: ");
 n = ReadInt();
 for(i=0;i<n;i++){
-PrintString("Nhap ki tu thu ");
+PrintString("Nhap so thu ");
 PrintInt(i+1);
 PrintString(": ");
 a[i] = ReadInt();
@@ -29,7 +29,7 @@ for(j=0; j<n-1; j++)
 }
 }
 //End sort
-PrintString("Ket qua: ");
+PrintString("Ket qua sap xep tang dan: ");
 for(i =0;i<n;i++){
 PrintInt(a[i]);
 PrintString(" ");

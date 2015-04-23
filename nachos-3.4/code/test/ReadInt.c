@@ -3,7 +3,10 @@
 #define maxlen 32
 int main()
 {
-      int num = ReadInt();
-      
-      Halt();
+	int num;
+	PrintString("Nhap so: ");
+     	num = ReadInt();
+      	
+	PrintString("So vua nhap la\n");
+	PrintInt(num);
 }
