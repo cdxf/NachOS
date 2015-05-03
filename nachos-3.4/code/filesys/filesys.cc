@@ -87,6 +87,7 @@ FileSystem::FileSystem(bool format)
 	FileHeader *dirHdr = new FileHeader;
 
         DEBUG('f', "Formatting the file system.\n");
+        printf("%s", "Formatting the file system.\n");
 
     // First, allocate space for FileHeaders for the directory and bitmap
     // (make sure no one else grabs these!)
@@ -105,6 +106,7 @@ FileSystem::FileSystem(bool format)
     // on it!).
 
         DEBUG('f', "Writing headers back to disk.\n");
+ 	printf("%s", "Writing headers back to disk.\n");
 	mapHdr->WriteBack(FreeMapSector);    
 	dirHdr->WriteBack(DirectorySector);
 
@@ -133,7 +135,7 @@ FileSystem::FileSystem(bool format)
 	delete directory; 
 	delete mapHdr; 
 	delete dirHdr;
-	}
+}	printf("%s", "Stop here.\n");
     } else {
     // if we are not formatting the disk, just open the files representing
     // the bitmap and directory; these are left open while Nachos is running

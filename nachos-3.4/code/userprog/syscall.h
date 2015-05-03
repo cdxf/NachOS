@@ -22,7 +22,7 @@
 #define SC_Exit   1
 #define SC_Exec   2
 #define SC_Join   3
-#define SC_Create 4
+#define SC_CreateFile 4
 #define SC_Open   5
 #define SC_Read   6
 #define SC_Write  7
@@ -36,6 +36,7 @@
 #define SC_ReadString 16
 #define SC_PrintString 42
 #define SC_Sub    43
+#define SC_Seak    44
 
 #ifndef IN_ASM
 
@@ -94,15 +95,15 @@ typedef int OpenFileId;
 #define ConsoleOutput 1
 
 /* Create a Nachos file, with "name" */
-int Create(char *name);
+int CreateFile(char *name);
 
 /* Open the Nachos file "name", and return an "OpenFileId" that can
  * be used to read and write to the file.
  */
-OpenFileId Open(char *name);
+OpenFileId Open(char *name,int type);
 
 /* Write "size" bytes from "buffer" to the open file. */
-void Write(char *buffer, int size, OpenFileId id);
+int Write(char *buffer, int size, OpenFileId id);
 
 /* Read "size" bytes from the open file into "buffer".
  * Return the number of bytes actually read -- if the open file isn't
@@ -110,12 +111,13 @@ void Write(char *buffer, int size, OpenFileId id);
  * characters to read, return whatever is available (for I/O devices,
  * you should always wait until you can return at least one character).
  */
-int Read(char *buffer, int size, OpenFileId id);
+int Read(char *buffer, int charcount, OpenFileId id);
 
 /* Close the file, we're done reading and writing to it. */
-void Close(OpenFileId id);
+//int Close(OpenFileId id);
 
-
+/* Seek the position */
+int Seek(int pos, OpenFileId id);
 
 /* User-level thread operations: Fork and Yield.  To allow multiple
  * threads to run within a user program.

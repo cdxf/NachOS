@@ -60,7 +60,7 @@ SwapHeader (NoffHeader *noffH)
 //	"executable" is the file containing the object code to load into memory
 //----------------------------------------------------------------------
 
-AddrSpace::AddrSpace(OpenFile *executable)
+AddrSpace::AddrSpace(IOpenFile *executable)
 {
     NoffHeader noffH;
     unsigned int i, size;

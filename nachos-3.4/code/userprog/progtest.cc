@@ -23,14 +23,16 @@
 void
 StartProcess(char *filename)
 {
-    OpenFile *executable = fileSystem->Open(filename);
+    int fileDescriptor = OpenForReadWrite(filename, FALSE);
+    if (fileDescriptor == -1) return;
+    OpenFileStub *executable = new OpenFileStub(fileDescriptor);
     AddrSpace *space;
 
     if (executable == NULL) {
 	printf("Unable to open file %s\n", filename);
 	return;
     }
-    space = new AddrSpace(executable);    
+    space = new AddrSpace((OpenFile* )executable);    
     currentThread->space = space;
 
     delete executable;			// close file

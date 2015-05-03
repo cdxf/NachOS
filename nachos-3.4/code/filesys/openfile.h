@@ -23,13 +23,32 @@
 #include "copyright.h"
 #include "utility.h"
 
-#ifdef FILESYS_STUB			// Temporarily implement calls to 
+class IOpenFile{
+public:
+    virtual int Read(char *into, int numBytes) = 0; // Read/write bytes from the file,
+					// starting at the implicit position.
+					// Return the # actually read/written,
+					// and increment position in file.
+    virtual int Write(char *from, int numBytes) = 0;
+
+    virtual int ReadAt(char *into, int numBytes, int position) = 0;
+    					// Read/write bytes from the file,
+					// bypassing the implicit position.
+    virtual int WriteAt(char *from, int numBytes, int position) = 0;
+
+    virtual int Length() = 0; 			// Return the number of bytes in the
+					// file (this interface is simpler 
+					// than the UNIX idiom -- lseek to 
+					// end of file, tell, lseek back 
+};
+
+//#ifdef FILESYS_STUB			// Temporarily implement calls to 
 					// Nachos file system as calls to UNIX!
 					// See definitions listed under #else
-class OpenFile {
+class OpenFileStub : public IOpenFile{
   public:
-    OpenFile(int f) { file = f; currentOffset = 0; }	// open the file
-    ~OpenFile() { Close(file); }			// close the file
+    OpenFileStub(int f) { file = f; currentOffset = 0; }	// open the file
+    ~OpenFileStub() { Close(file); }			// close the file
 
     int ReadAt(char *into, int numBytes, int position) { 
     		Lseek(file, position, 0); 
@@ -58,10 +77,10 @@ class OpenFile {
     int currentOffset;
 };
 
-#else // FILESYS
+//#else // FILESYS
 class FileHeader;
 
-class OpenFile {
+class OpenFile : public IOpenFile{
   public:
     OpenFile(int sector);		// Open a file whose header is located
 					// at "sector" on the disk
@@ -91,6 +110,6 @@ class OpenFile {
     int seekPosition;			// Current position within the file
 };
 
-#endif // FILESYS
+//#endif // FILESYS
 
 #endif // OPENFILE_H

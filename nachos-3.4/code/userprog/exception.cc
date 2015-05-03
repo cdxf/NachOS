@@ -52,6 +52,9 @@
 //     - Limit of buffer (int)
 // Output:- Buffer (char*)
 // Purpose: Copy buffer from User memory space to System memory space
+
+
+
 char* User2System(int virtAddr,int limit)
 {
         int i; // index
@@ -91,9 +94,19 @@ int System2User(int virtAddr,int len,char* buffer)
         } while(i < len && oneChar != 0);
         return i;
 }
+
+inline void syscallreturn(int result){
+	machine->WriteRegister(2,result);
+}
+inline int syscallget(int i){
+	return (machine->ReadRegister(i+3));
+}
+
 int op1, op2, result, n;
 char* buffer = new char[MaxStringLength];
 int virtAddr, len;
+int openFileFlag = 0;
+OpenFile* OpenFileTable[10];
 void
 //Varible for Readint()
 ExceptionHandler(ExceptionType which)
@@ -152,13 +165,15 @@ ExceptionHandler(ExceptionType which)
                 case SC_Halt:
                         DEBUG('a', "\n Shutdown, initiated by user program.");
                         printf ("\n\n Shutdown, initiated by user program.");
+			printf ("\n\n Disk: ");
+			fileSystem->Print();
                         interrupt->Halt();
                         break;
-                case SC_Create:
+                case SC_CreateFile:
                 {
                         int virtAddr;
                         char* filename;
-                        DEBUG('a',"\n SC_Create call ...");
+                        DEBUG('a',"\n SC_CreateFile call ...");
                         DEBUG('a',"\n Reading virtual address of filename");
                         // Lấy tham số tên tập tin từ thanh ghi r4
                         virtAddr = machine->ReadRegister(4);
@@ -168,28 +183,22 @@ ExceptionHandler(ExceptionType which)
                         {
                                 printf("\n Not enough memory in system");
                                 DEBUG('a',"\n Not enough memory in system");
-                                machine->WriteRegister(2,-1); // trả về lỗi cho chương
+                                syscallreturn(-1); // trả về lỗi cho chương
                                 // trình người dùng
                                 delete filename;
                                 return;
                         }
                         DEBUG('a',"\n Finish reading filename.");
-                        //DEBUG('a',"\n File name : '"<<filename<<"'");
-                        // Create file with size = 0
-                        // Dùng đối tượng fileSystem của lớp OpenFile để tạo file,
-                        // việc tạo file này là sử dụng các thủ tục tạo file của hệ điều
-                        // hành Linux, chúng ta không quản ly trực tiếp các block trên
-                        // đĩa cứng cấp phát cho file, việc quản ly các block của file
-                        // trên ổ đĩa là một đồ án khác
+			printf(filename);
                         if (!fileSystem->Create(filename,0))
                         {
                                 printf("\n Error create file '%s'",filename);
-                                machine->WriteRegister(2,-1);
+                                syscallreturn(-1);
                                 delete filename;
                                 return;
                         }
 
-                        machine->WriteRegister(2,0); // trả về cho chương trình
+                       syscallreturn(0); // trả về cho chương trình
                         // người dùng thành công
                         delete filename;
                         break;
@@ -207,9 +216,36 @@ ExceptionHandler(ExceptionType which)
                         printf ("\n\n SC_Join");
                         break;
                 case SC_Open:
+		{
                         DEBUG('a', "\n SC_Open");
-                        printf ("\n\n SC_Open");
+                        printf("\n\n SC_Open");
+			int virtAddr;
+                        char* filename;
+                        virtAddr = syscallget(1);
+                        DEBUG ('a',"\n Reading filename.");
+                        filename = User2System(virtAddr,MaxStringLength+1);
+			openFileFlag = syscallget(2);
+			int id = -1;
+			// 0 and 1 are used for SynchConsle
+			for(int i=2; i<10;i++){
+				if(OpenFileTable[i] != NULL) 
+				{
+					id = i;
+					break;
+				}
+			}
+			if(id = -1){
+				syscallreturn(-1);
+				DEBUG('a',"\n OpenFileTable can't contain more than 10 files.");
+			}
+			else{
+				OpenFile* file = fileSystem->Open(filename);
+				//Store OpenFile into OpenFileTable;
+				OpenFileTable[id] = file;
+				syscallreturn(0);
+			}
                         break;
+		}
                 case SC_Read:
                         DEBUG('a', "\n SC_Read");
                         printf ("\n\n SC_Read");
