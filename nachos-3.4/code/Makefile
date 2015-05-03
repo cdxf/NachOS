@@ -4,7 +4,6 @@
 
 MAKE = make
 LPR = lpr
-
 all: 
 	cd threads; $(MAKE) depend
 	cd threads; $(MAKE) nachos

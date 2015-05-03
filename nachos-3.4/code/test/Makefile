@@ -35,7 +35,7 @@ CPP = gcc -E
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: halt shell matmult sort createfile sub ReadInt ascii msort help
+all: halt shell matmult sort createfile sub ReadInt ascii msort help echo cat copy reverse
 
 
 
@@ -56,6 +56,31 @@ halt.o: halt.c
 halt: halt.o start.o
 	$(LD) $(LDFLAGS) start.o halt.o -o halt.coff
 	../bin/coff2noff halt.coff halt
+
+reverse.o: reverse.c
+	$(CC) $(CFLAGS) -c reverse.c
+reverse: reverse.o start.o
+	$(LD) $(LDFLAGS) start.o reverse.o -o reverse.coff
+	../bin/coff2noff reverse.coff reverse
+
+
+echo.o: echo.c
+	$(CC) $(CFLAGS) -c echo.c
+echo: echo.o start.o
+	$(LD) $(LDFLAGS) start.o echo.o -o echo.coff
+	../bin/coff2noff echo.coff echo
+
+copy.o: copy.c
+	$(CC) $(CFLAGS) -c copy.c
+copy: copy.o start.o
+	$(LD) $(LDFLAGS) start.o copy.o -o copy.coff
+	../bin/coff2noff copy.coff copy
+
+cat.o: cat.c
+	$(CC) $(CFLAGS) -c cat.c
+cat: cat.o start.o
+	$(LD) $(LDFLAGS) start.o cat.o -o cat.coff
+	../bin/coff2noff cat.coff cat
 
 ascii.o: ascii.c
 	$(CC) $(CFLAGS) -c ascii.c

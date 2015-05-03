@@ -36,8 +36,8 @@
 #define SC_ReadString 16
 #define SC_PrintString 42
 #define SC_Sub    43
-#define SC_Seak    44
-
+#define SC_Seek    44
+#define SC_FileSize 45
 #ifndef IN_ASM
 
 /* The system call interface.  These are the operations the Nachos
@@ -102,6 +102,8 @@ int CreateFile(char *name);
  */
 OpenFileId Open(char *name,int type);
 
+/*Get File size */
+int FileSize(OpenFileId id);
 /* Write "size" bytes from "buffer" to the open file. */
 int Write(char *buffer, int size, OpenFileId id);
 
@@ -138,7 +140,7 @@ int ReadInt ();
 void PrintInt (int i);
 char  ReadChar();
 void  PrintChar(char character);
-void  ReadString  (const char*  buffer,  int length);
+int  ReadString  (const char*  buffer,  int length);
 void PrintString(const char* buffer);
 #endif /* IN_ASM */
 

@@ -25,6 +25,7 @@
   #include "system.h"
   #include "syscall.h"
   #define MaxStringLength 256
+  #define FileSize 256
 //----------------------------------------------------------------------
 // ExceptionHandler
 //  Entry point into the Nachos kernel.  Called when a user program
@@ -96,17 +97,23 @@ int System2User(int virtAddr,int len,char* buffer)
 }
 
 inline void syscallreturn(int result){
-	machine->WriteRegister(2,result);
+        machine->WriteRegister(2,result);
 }
 inline int syscallget(int i){
-	return (machine->ReadRegister(i+3));
+        return (machine->ReadRegister(i+3));
 }
 
 int op1, op2, result, n;
 char* buffer = new char[MaxStringLength];
 int virtAddr, len;
-int openFileFlag = 0;
-OpenFile* OpenFileTable[10];
+class OpenFileWithMode {
+public:
+OpenFile* openFile = NULL;
+char* filename;
+bool mode = 0;
+};
+OpenFileWithMode* OpenFileTable[10] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
+
 void
 //Varible for Readint()
 ExceptionHandler(ExceptionType which)
@@ -163,12 +170,12 @@ ExceptionHandler(ExceptionType which)
         case SyscallException:
                 switch (type) {
                 case SC_Halt:
+                {
                         DEBUG('a', "\n Shutdown, initiated by user program.");
                         printf ("\n\n Shutdown, initiated by user program.");
-			printf ("\n\n Disk: ");
-			fileSystem->Print();
                         interrupt->Halt();
                         break;
+                }
                 case SC_CreateFile:
                 {
                         int virtAddr;
@@ -177,8 +184,16 @@ ExceptionHandler(ExceptionType which)
                         DEBUG('a',"\n Reading virtual address of filename");
                         // Lấy tham số tên tập tin từ thanh ghi r4
                         virtAddr = machine->ReadRegister(4);
-                        DEBUG ('a',"\n Reading filename.");
                         filename = User2System(virtAddr,MaxStringLength+1);
+                        for(int i = 0; i<10; i++) {
+                                if(OpenFileTable[i] == NULL) continue;
+                                if(strcmp(OpenFileTable[i]->filename,filename) == 0) {
+                                        syscallreturn(-1);
+                                        DEBUG('a',"\n File exist.");
+                                        printf("\n File exist.");
+                                        return;
+                                }
+                        }
                         if (filename == NULL)
                         {
                                 printf("\n Not enough memory in system");
@@ -188,21 +203,19 @@ ExceptionHandler(ExceptionType which)
                                 delete filename;
                                 return;
                         }
-                        DEBUG('a',"\n Finish reading filename.");
-			printf(filename);
                         if (!fileSystem->Create(filename,0))
                         {
-                                printf("\n Error create file '%s'",filename);
+                                printf("\n Error create file, '%s' maybe file exist",filename);
                                 syscallreturn(-1);
                                 delete filename;
                                 return;
                         }
-
-                       syscallreturn(0); // trả về cho chương trình
+                        syscallreturn(0); // trả về cho chương trình
                         // người dùng thành công
                         delete filename;
-                        break;
+
                 }
+                break;
                 case SC_Exit:
                         DEBUG('a', "\n SC_Exit");
                         printf ("\n\n SC_Exit");
@@ -216,48 +229,187 @@ ExceptionHandler(ExceptionType which)
                         printf ("\n\n SC_Join");
                         break;
                 case SC_Open:
-		{
+                {
                         DEBUG('a', "\n SC_Open");
-                        printf("\n\n SC_Open");
-			int virtAddr;
+                        int virtAddr;
                         char* filename;
                         virtAddr = syscallget(1);
                         DEBUG ('a',"\n Reading filename.");
                         filename = User2System(virtAddr,MaxStringLength+1);
-			openFileFlag = syscallget(2);
-			int id = -1;
-			// 0 and 1 are used for SynchConsle
-			for(int i=2; i<10;i++){
-				if(OpenFileTable[i] != NULL) 
-				{
-					id = i;
-					break;
-				}
-			}
-			if(id = -1){
-				syscallreturn(-1);
-				DEBUG('a',"\n OpenFileTable can't contain more than 10 files.");
-			}
-			else{
-				OpenFile* file = fileSystem->Open(filename);
-				//Store OpenFile into OpenFileTable;
-				OpenFileTable[id] = file;
-				syscallreturn(0);
-			}
+                        int id = -1;
+                        // 0 and 1 are used for SynchConsle
+                        for(int i=2; i<10; i++) {
+                                if(OpenFileTable[i] == NULL)
+                                {
+                                        id = i;
+                                        break;
+                                }
+                        }
+                        if(id == -1) {
+                                syscallreturn(-1);
+                                DEBUG('a',"\n File name existed or OpenFileTable can't contain more than 10 files.");
+                                printf("\n File name existed or OpenFileTable can't contain more than 10 files.");
+                        }
+                        else{
+                                OpenFile* file = fileSystem->Open(filename);
+                                if (file == NULL) {
+                                        printf("Error openning file %s",filename);
+                                        syscallreturn(-1);
+                                        break;
+                                }
+                                else{
+                                        //Store OpenFile into OpenFileTable;
+                                        OpenFileTable[id] = new OpenFileWithMode;
+                                        OpenFileTable[id]->openFile = file;
+                                        OpenFileTable[id]->filename = new char[strlen(filename)];
+                                        strcpy(OpenFileTable[id]->filename,filename);
+                                        OpenFileTable[id]->mode = syscallget(2);
+                                        syscallreturn(id);
+                                }
+                        }
                         break;
-		}
+                }
+                case SC_FileSize:
+                {
+                        int id = syscallget(1);
+                        if(OpenFileTable[id] == NULL) {
+                                DEBUG('a',"\n OpenFileId is not exist.");
+                                printf("\n OpenFileId is not exist.");
+                        }
+                        else{
+                                syscallreturn(OpenFileTable[id]->openFile->Length());
+                        }
+                        break;
+                }
                 case SC_Read:
+                {
+                        int virtAddr = syscallget(1);
+                        int charcount = syscallget(2);
+                        int id = syscallget(3);
+                        char* buffer = new char[charcount];
+                        //Read Console Input
+                        if(id == 0) {
+                                for(int i = 0; i<charcount; i++) {
+                                        if(buffer[i] == '\0') {
+                                                charcount = i+1;
+                                        }
+                                }
+                                int bytes = gSynchConsole->Read(buffer,charcount);
+                                System2User(virtAddr, bytes, buffer);
+                                syscallreturn(bytes);
+                        }
+                        else if(id == 1) {
+                                DEBUG('a',"\n Can't read from Console Output.");
+                                printf("\n Can't read from Console Output.");
+                                syscallreturn(-1);
+                        }
+                        else if(OpenFileTable[id] == NULL) {
+                                DEBUG('a',"\n OpenFileId is not exist.");
+                                printf("\n OpenFileId is not exist.");
+                        }
+                        else{
+                                int bytes = OpenFileTable[id]->openFile->Read(buffer,charcount);
+                                System2User(virtAddr, bytes, buffer);
+                                if(bytes == 0)
+                                        syscallreturn(-2);
+                                else
+                                        syscallreturn(bytes);
+                        }
                         DEBUG('a', "\n SC_Read");
-                        printf ("\n\n SC_Read");
                         break;
+                }
                 case SC_Write:
-                        DEBUG('a', "\n SC_Write");
-                        printf ("\n\n SC_Write");
+                {
+                        int virtAddr = syscallget(1);
+                        int charcount = syscallget(2);
+                        int id = syscallget(3);
+                        char* buffer;
+                        buffer = User2System(virtAddr,MaxStringLength+1);
+                        if(id == 0) {
+                                DEBUG('a',"\n Can't write to Console Input.");
+                                printf("\n Can't write to Console Input.");
+                                syscallreturn(-1);
+                                break;
+                        }
+                        else if(id == 1) {
+                                for(int i = 0; i<charcount; i++) {
+                                        if(buffer[i] == '\0') {
+                                                charcount = i+1;
+                                        }
+                                }
+                                int bytes = gSynchConsole->Write(buffer,charcount);
+                                syscallreturn(bytes);
+                        }
+                        else if(id <0 || OpenFileTable[id] == NULL) {
+                                DEBUG('a',"\n OpenFileId is not exist.");
+                                printf("\n OpenFileId is not exist.");
+                                break;
+                        }
+                        else if(OpenFileTable[id]->mode == 1){
+                          DEBUG('a',"\n File is unwritable, please open it in Read/Write mode.");
+                          printf("\n File is unwritable, please open it in Read/Write mode.");
+
+                        }
+                        else{
+                                int filesize = OpenFileTable[id]->openFile->Length();
+                                printf("Filesize: %d",filesize);
+                                int pos = OpenFileTable[id]->openFile->CurrentPos();
+                                printf("Pos: %d",pos);
+                                if(pos + charcount > filesize) {
+                                        if(filesize == 0) {
+                                                fileSystem->Remove(OpenFileTable[id]->filename);
+                                                fileSystem->Create(OpenFileTable[id]->filename,pos + charcount);
+                                                OpenFileTable[id]->openFile = fileSystem->Open(OpenFileTable[id]->filename);
+                                        }
+                                        else{
+                                                char* filebuffer = new char[filesize];
+                                                OpenFileTable[id]->openFile->Seek(0);
+                                                int bytes = OpenFileTable[id]->openFile->Read(filebuffer,filesize);
+                                                printf("Bytes: %d",bytes);
+                                                printf("Readed %s",filebuffer);
+                                                fileSystem->Remove(OpenFileTable[id]->filename);
+                                                fileSystem->Create(OpenFileTable[id]->filename,pos + charcount);
+                                                OpenFileTable[id]->openFile = fileSystem->Open(OpenFileTable[id]->filename);
+                                                OpenFileTable[id]->openFile->Write(filebuffer,filesize);
+                                                OpenFileTable[id]->openFile->Seek(pos);
+                                                delete[] filebuffer;
+                                        }
+                                }
+                                int bytes = OpenFileTable[id]->openFile->Write(buffer,charcount);
+                                syscallreturn(bytes);
+                        }
                         break;
+                }
                 case SC_Close:
-                        DEBUG('a', "\n SC_Close");
-                        printf ("\n\n SC_Close");
+                {
+                        int id = syscallget(1);
+                        if(id == 0 || id == 1) syscallreturn(-1);
+                        else{
+                                delete OpenFileTable[id]->openFile;
+                                delete OpenFileTable[id]->filename;
+                                delete OpenFileTable[id];
+                                OpenFileTable[id] = NULL;
+                                syscallreturn(0);
+                        }
                         break;
+                }
+                case SC_Seek:
+                {
+                        int pos = syscallget(1);
+                        int id  = syscallget(2);
+                        DEBUG('a', "\n SC_Seek");
+                        printf ("\n\n SC_Seek");
+                        if(id == 0 || id == 1) {
+                                DEBUG('a', "\n SC_Seek is not accepted on Console");
+                                printf ("\n\n SC_Seek is not accepted on Console");
+                                syscallreturn(-1);
+                        }
+                        else{
+                                OpenFileTable[id]->openFile->Seek(pos);
+                                syscallreturn(pos);
+                        }
+                        break;
+                }
                 case SC_Fork:
                         DEBUG('a', "\n SC_Fork");
                         printf ("\n\n SC_Fork");
@@ -279,7 +431,7 @@ ExceptionHandler(ExceptionType which)
                         result = atoi(buffer);
                         for(int i = 0; i < strlen(buffer); i++)
                         {
-				if(i == 0 && buffer[i] == '-') continue;
+                                if(i == 0 && buffer[i] == '-') continue;
                                 if(buffer[i]>'9' || buffer[i] < '0') {
                                         result = 0;
                                         break;
@@ -311,7 +463,8 @@ ExceptionHandler(ExceptionType which)
                         virtAddr = machine->ReadRegister(4);
                         len = machine->ReadRegister(5);
                         gSynchConsole->Read(buffer,MaxStringLength);
-                        System2User(virtAddr,len,buffer);
+                        System2User(virtAddr,strlen(buffer),buffer);
+                        syscallreturn(strlen(buffer));
                         break;
                 default:
                         printf("\n Unexpected user mode exception (%d %d)", which,type);

@@ -40,6 +40,7 @@ public:
 					// file (this interface is simpler 
 					// than the UNIX idiom -- lseek to 
 					// end of file, tell, lseek back 
+   virtual ~IOpenFile(){};
 };
 
 //#ifdef FILESYS_STUB			// Temporarily implement calls to 
@@ -86,7 +87,7 @@ class OpenFile : public IOpenFile{
 					// at "sector" on the disk
     ~OpenFile();			// Close the file
 
-    void Seek(int position); 		// Set the position from which to 
+    int Seek(int position); 		// Set the position from which to 
 					// start reading/writing -- UNIX lseek
 
     int Read(char *into, int numBytes); // Read/write bytes from the file,
@@ -104,6 +105,7 @@ class OpenFile : public IOpenFile{
 					// file (this interface is simpler 
 					// than the UNIX idiom -- lseek to 
 					// end of file, tell, lseek back 
+   int CurrentPos(){return seekPosition;}
     
   private:
     FileHeader *hdr;			// Header for this file 

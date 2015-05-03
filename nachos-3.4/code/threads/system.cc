@@ -170,7 +170,7 @@ Initialize(int argc, char **argv)
 
 #ifdef FILESYS_NEEDED
     fileSystem = new FileSystem(format);
-    //if(format = TRUE) interrupt->Halt();
+    if(format == TRUE) interrupt->Halt();
 #endif
 
 #ifdef NETWORK

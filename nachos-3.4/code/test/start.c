@@ -80,7 +80,7 @@ CreateFile:
 	addiu $2,$0,SC_CreateFile
 	syscall
 	j	$31
-	.end Create
+	.end CreateFile
 
 	.globl Open
 	.ent	Open
@@ -188,6 +188,22 @@ ReadString:
     .end ReadString
 
 
+
+	.globl Seek
+	.ent Seek
+Seek:
+    	addiu $2, $0, SC_Seek
+    	syscall
+    	j $31
+    .end Seek
+
+	.globl FileSize
+	.ent FileSize
+FileSize:
+    	addiu $2, $0, SC_FileSize
+    	syscall
+    	j $31
+    .end FileSize
 
 
 /* dummy function to keep gcc happy */
