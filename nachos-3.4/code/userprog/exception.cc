@@ -106,13 +106,6 @@ inline int syscallget(int i){
 int op1, op2, result, n;
 char* buffer = new char[MaxStringLength];
 int virtAddr, len;
-class OpenFileWithMode {
-public:
-OpenFile* openFile = NULL;
-char* filename;
-bool mode = 0;
-};
-OpenFileWithMode* OpenFileTable[10] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
 
 void
 //Varible for Readint()
@@ -185,15 +178,6 @@ ExceptionHandler(ExceptionType which)
                         // Lấy tham số tên tập tin từ thanh ghi r4
                         virtAddr = machine->ReadRegister(4);
                         filename = User2System(virtAddr,MaxStringLength+1);
-                        for(int i = 0; i<10; i++) {
-                                if(OpenFileTable[i] == NULL) continue;
-                                if(strcmp(OpenFileTable[i]->filename,filename) == 0) {
-                                        syscallreturn(-1);
-                                        DEBUG('a',"\n File exist.");
-                                        printf("\n File exist.");
-                                        return;
-                                }
-                        }
                         if (filename == NULL)
                         {
                                 printf("\n Not enough memory in system");
@@ -202,6 +186,14 @@ ExceptionHandler(ExceptionType which)
                                 // trình người dùng
                                 delete filename;
                                 return;
+                        }
+                        OpenFile* file = fileSystem->Open(filename);
+                        if(file != NULL){
+                          printf("\n File exist",filename);
+                          syscallreturn(-1);
+                          delete filename;
+                          delete file;
+                          return;
                         }
                         if (!fileSystem->Create(filename,0))
                         {
@@ -218,7 +210,6 @@ ExceptionHandler(ExceptionType which)
                 break;
                 case SC_Exit:
                         DEBUG('a', "\n SC_Exit");
-                        printf ("\n\n SC_Exit");
                         break;
                 case SC_Exec:
                         DEBUG('a', "\n SC_Exec");
@@ -239,7 +230,7 @@ ExceptionHandler(ExceptionType which)
                         int id = -1;
                         // 0 and 1 are used for SynchConsle
                         for(int i=2; i<10; i++) {
-                                if(OpenFileTable[i] == NULL)
+                                if(fileSystem->OpenFileTable[i] == NULL)
                                 {
                                         id = i;
                                         break;
@@ -259,11 +250,11 @@ ExceptionHandler(ExceptionType which)
                                 }
                                 else{
                                         //Store OpenFile into OpenFileTable;
-                                        OpenFileTable[id] = new OpenFileWithMode;
-                                        OpenFileTable[id]->openFile = file;
-                                        OpenFileTable[id]->filename = new char[strlen(filename)];
-                                        strcpy(OpenFileTable[id]->filename,filename);
-                                        OpenFileTable[id]->mode = syscallget(2);
+                                        fileSystem->OpenFileTable[id] = new OpenFileWithMode;
+                                        fileSystem->OpenFileTable[id]->openFile = file;
+                                        fileSystem->OpenFileTable[id]->filename = new char[strlen(filename)];
+                                        strcpy(fileSystem->OpenFileTable[id]->filename,filename);
+                                        fileSystem->OpenFileTable[id]->mode = syscallget(2);
                                         syscallreturn(id);
                                 }
                         }
@@ -272,12 +263,12 @@ ExceptionHandler(ExceptionType which)
                 case SC_FileSize:
                 {
                         int id = syscallget(1);
-                        if(OpenFileTable[id] == NULL) {
+                        if(fileSystem->OpenFileTable[id] == NULL) {
                                 DEBUG('a',"\n OpenFileId is not exist.");
                                 printf("\n OpenFileId is not exist.");
                         }
                         else{
-                                syscallreturn(OpenFileTable[id]->openFile->Length());
+                                syscallreturn(fileSystem->OpenFileTable[id]->openFile->Length());
                         }
                         break;
                 }
@@ -303,12 +294,12 @@ ExceptionHandler(ExceptionType which)
                                 printf("\n Can't read from Console Output.");
                                 syscallreturn(-1);
                         }
-                        else if(OpenFileTable[id] == NULL) {
+                        else if(fileSystem->OpenFileTable[id] == NULL) {
                                 DEBUG('a',"\n OpenFileId is not exist.");
                                 printf("\n OpenFileId is not exist.");
                         }
                         else{
-                                int bytes = OpenFileTable[id]->openFile->Read(buffer,charcount);
+                                int bytes = fileSystem->OpenFileTable[id]->openFile->Read(buffer,charcount);
                                 System2User(virtAddr, bytes, buffer);
                                 if(bytes == 0)
                                         syscallreturn(-2);
@@ -340,42 +331,38 @@ ExceptionHandler(ExceptionType which)
                                 int bytes = gSynchConsole->Write(buffer,charcount);
                                 syscallreturn(bytes);
                         }
-                        else if(id <0 || OpenFileTable[id] == NULL) {
+                        else if(id <0 || fileSystem->OpenFileTable[id] == NULL) {
                                 DEBUG('a',"\n OpenFileId is not exist.");
                                 printf("\n OpenFileId is not exist.");
                                 break;
                         }
-                        else if(OpenFileTable[id]->mode == 1){
-                          DEBUG('a',"\n File is unwritable, please open it in Read/Write mode.");
-                          printf("\n File is unwritable, please open it in Read/Write mode.");
+                        else if(fileSystem->OpenFileTable[id]->mode == 1) {
+                                DEBUG('a',"\n File is unwritable, please open it in Read/Write mode.");
+                                printf("\n File is unwritable, please open it in Read/Write mode.");
 
                         }
                         else{
-                                int filesize = OpenFileTable[id]->openFile->Length();
-                                printf("Filesize: %d",filesize);
-                                int pos = OpenFileTable[id]->openFile->CurrentPos();
-                                printf("Pos: %d",pos);
+                                int filesize = fileSystem->OpenFileTable[id]->openFile->Length();
+                                int pos = fileSystem->OpenFileTable[id]->openFile->CurrentPos();
                                 if(pos + charcount > filesize) {
                                         if(filesize == 0) {
-                                                fileSystem->Remove(OpenFileTable[id]->filename);
-                                                fileSystem->Create(OpenFileTable[id]->filename,pos + charcount);
-                                                OpenFileTable[id]->openFile = fileSystem->Open(OpenFileTable[id]->filename);
+                                                fileSystem->Remove(fileSystem->OpenFileTable[id]->filename);
+                                                fileSystem->Create(fileSystem->OpenFileTable[id]->filename,pos + charcount);
+                                                fileSystem->OpenFileTable[id]->openFile = fileSystem->Open(fileSystem->OpenFileTable[id]->filename);
                                         }
                                         else{
                                                 char* filebuffer = new char[filesize];
-                                                OpenFileTable[id]->openFile->Seek(0);
-                                                int bytes = OpenFileTable[id]->openFile->Read(filebuffer,filesize);
-                                                printf("Bytes: %d",bytes);
-                                                printf("Readed %s",filebuffer);
-                                                fileSystem->Remove(OpenFileTable[id]->filename);
-                                                fileSystem->Create(OpenFileTable[id]->filename,pos + charcount);
-                                                OpenFileTable[id]->openFile = fileSystem->Open(OpenFileTable[id]->filename);
-                                                OpenFileTable[id]->openFile->Write(filebuffer,filesize);
-                                                OpenFileTable[id]->openFile->Seek(pos);
+                                                fileSystem->OpenFileTable[id]->openFile->Seek(0);
+                                                int bytes = fileSystem->OpenFileTable[id]->openFile->Read(filebuffer,filesize);
+                                                fileSystem->Remove(fileSystem->OpenFileTable[id]->filename);
+                                                fileSystem->Create(fileSystem->OpenFileTable[id]->filename,pos + charcount);
+                                                fileSystem->OpenFileTable[id]->openFile = fileSystem->Open(fileSystem->OpenFileTable[id]->filename);
+                                                fileSystem->OpenFileTable[id]->openFile->Write(filebuffer,filesize);
+                                                fileSystem->OpenFileTable[id]->openFile->Seek(pos);
                                                 delete[] filebuffer;
                                         }
                                 }
-                                int bytes = OpenFileTable[id]->openFile->Write(buffer,charcount);
+                                int bytes = fileSystem->OpenFileTable[id]->openFile->Write(buffer,charcount);
                                 syscallreturn(bytes);
                         }
                         break;
@@ -385,10 +372,10 @@ ExceptionHandler(ExceptionType which)
                         int id = syscallget(1);
                         if(id == 0 || id == 1) syscallreturn(-1);
                         else{
-                                delete OpenFileTable[id]->openFile;
-                                delete OpenFileTable[id]->filename;
-                                delete OpenFileTable[id];
-                                OpenFileTable[id] = NULL;
+                                delete fileSystem->OpenFileTable[id]->openFile;
+                                delete fileSystem->OpenFileTable[id]->filename;
+                                delete fileSystem->OpenFileTable[id];
+                                fileSystem->OpenFileTable[id] = NULL;
                                 syscallreturn(0);
                         }
                         break;
@@ -405,7 +392,7 @@ ExceptionHandler(ExceptionType which)
                                 syscallreturn(-1);
                         }
                         else{
-                                OpenFileTable[id]->openFile->Seek(pos);
+                          fileSystem->OpenFileTable[id]->openFile->Seek(pos);
                                 syscallreturn(pos);
                         }
                         break;

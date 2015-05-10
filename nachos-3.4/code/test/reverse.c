@@ -11,6 +11,7 @@ int main()
         char scr[maxlen +1];
         char des[maxlen +1];
         /*Create a file*/
+        PrintString("REVERSE PROGRAM\n Caution: Only works with text file\n");
         PrintString("Nhap ten file nguon: ");
         ReadString(scr,maxlen);
         fileid = Open(scr,0);
@@ -21,11 +22,18 @@ int main()
         }
         else{
                 Read(buffer,len,fileid);
+                PrintString("Len: "); PrintInt(len);
                 for(i = 0; i < len; i++) {
-                        if(buffer[i] == '\0') {
+                        if(buffer[i] == 0) {
                                 len = i - 1;
+                                break;
+                        }
+                        else{
+                          PrintChar(buffer[i]);
                         }
                 }
+                len = len - 1;
+                PrintString("Len: "); PrintInt(len);
                 for(i = 0; i<len/2; i++) {
                         //swap
                         temp = buffer[i];

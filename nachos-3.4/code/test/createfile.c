@@ -12,9 +12,7 @@ int main()
         ReadString(filename,maxlen);
         if(CreateFile(filename) == 0) {
                 PrintString("Da tao File Thanh Cong \n");
-                PrintString("OpenFileId:");
                 fileid = Open(filename,0);
-                PrintInt(fileid);
                 PrintChar('\n');
                 PrintString("Nhap noi dung cua file: ");
                 len = ReadString(buffer,maxlen);

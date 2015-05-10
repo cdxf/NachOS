@@ -38,6 +38,14 @@
 #include "copyright.h"
 #include "openfile.h"
 
+
+class OpenFileWithMode {
+public:
+OpenFile* openFile = NULL;
+char* filename;
+bool mode = 0;
+};
+
 #ifdef FILESYS_STUB 		// Temporarily implement file system calls as 
 				// calls to UNIX, until the real file system
 				// implementation is available
@@ -73,6 +81,7 @@ class FileSystem {
     					// If "format", there is nothing on
 					// the disk, so initialize the directory
     					// and the bitmap of free blocks.
+    OpenFileWithMode* OpenFileTable[10] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
 
     bool Create(char *name, int initialSize);  	
 					// Create a file (UNIX creat)
