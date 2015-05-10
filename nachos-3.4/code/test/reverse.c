@@ -22,7 +22,6 @@ int main()
         }
         else{
                 Read(buffer,len,fileid);
-                PrintString("Len: "); PrintInt(len);
                 for(i = 0; i < len; i++) {
                         if(buffer[i] == 0) {
                                 len = i - 1;
@@ -33,7 +32,6 @@ int main()
                         }
                 }
                 len = len - 1;
-                PrintString("Len: "); PrintInt(len);
                 for(i = 0; i<len/2; i++) {
                         //swap
                         temp = buffer[i];
